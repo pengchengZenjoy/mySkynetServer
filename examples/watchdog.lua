@@ -37,6 +37,7 @@ function SOCKET.warning(fd, size)
 end
 
 function SOCKET.data(fd, msg)
+	print("socket data", fd, msg)
 end
 
 function CMD.start(conf)
@@ -45,6 +46,13 @@ end
 
 function CMD.close(fd)
 	close_agent(fd)
+end
+
+function CMD.BROADCAST( msg)
+	for fd,a in pairs(agent) do
+		print("BROADCAST fd="..fd)
+		skynet.send(a, "lua", "broadCastMsg", msg)
+	end
 end
 
 skynet.start(function()
