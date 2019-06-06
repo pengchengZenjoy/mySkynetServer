@@ -70,47 +70,47 @@ local function test3( db)
 end
 skynet.start(function()
 
-	local function on_connect(db)
-		db:query("set charset utf8");
-	end
-	local db=mysql.connect({
-		host="127.0.0.1",
-		port=3306,
-		database="skynet",
-		user="root",
-		password="1",
-		max_packet_size = 1024 * 1024,
-		on_connect = on_connect
-	})
-	if not db then
-		print("failed to connect")
-	end
-	print("testmysql success to connect to mysql server")
+    local function on_connect(db)
+        db:query("set charset utf8");
+    end
+    local db=mysql.connect({
+        host="127.0.0.1",
+        port=3306,
+        database="skynet",
+        user="root",
+        password="45e74438110da4b5",
+        max_packet_size = 1024 * 1024,
+        on_connect = on_connect
+    })
+    if not db then
+        print("failed to connect")
+    end
+    print("testmysql success to connect to mysql server")
 
-	local res = db:query("drop table if exists cats")
-	res = db:query("create table cats "
-		               .."(id serial primary key, ".. "name varchar(5))")
-	print( dump( res ) )
+    --[[local res = db:query("drop table if exists cats")
+    res = db:query("create table cats "
+                       .."(id serial primary key, ".. "name varchar(5))")
+    print( dump( res ) )
 
-	res = db:query("insert into cats (name) "
+    res = db:query("insert into cats (name) "
                              .. "values (\'Bob\'),(\'\'),(null)")
-	print ( dump( res ) )
+    print ( dump( res ) )
 
-	res = db:query("select * from cats order by id asc")
-	print ( dump( res ) )
+    res = db:query("select * from cats order by id asc")
+    print ( dump( res ) )
 
     -- test in another coroutine
-	skynet.fork( test2, db)
+    skynet.fork( test2, db)
     skynet.fork( test3, db)
-	-- multiresultset test
-	res = db:query("select * from cats order by id asc ; select * from cats")
-	print ("multiresultset test result=", dump( res ) )
+    -- multiresultset test
+    res = db:query("select * from cats order by id asc ; select * from cats")
+    print ("multiresultset test result=", dump( res ) )]]
 
-	print ("escape string test result=", mysql.quote_sql_str([[\mysql escape %string test'test"]]) )
+    --print ("escape string test result=", mysql.quote_sql_str([[\mysql escape %string test'test"]]) )
 
-	-- bad sql statement
-	local res =  db:query("select * from notexisttable" )
-	print( "bad query test result=" ,dump(res) )
+    -- bad sql statement
+    --[[local res =  db:query("select * from notexisttable" )
+    print( "bad query test result=" ,dump(res) )
 
     local i=1
     while true do
@@ -123,9 +123,18 @@ skynet.start(function()
 
         skynet.sleep(1000)
         i=i+1
-    end
+    end]]
 
-	--db:disconnect()
-	--skynet.exit()
+    --db:disconnect()
+    --skynet.exit()
+    --CREATE TABLE IF NOT EXISTS chatlist(chat_id INT UNSIGNED AUTO_INCREMENT,chat_content VARCHAR(100) NOT NULL,PRIMARY KEY (chat_id))ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+    res = db:query("insert into chatlist (chat_content) values (\"first chat content\")")
+    print ( dump( res ) )
+
+    res = db:query("select * from chatlist order by chat_id asc")
+    print ( dump( res ) )
+    db:disconnect()
+    skynet.exit()
 end)
 
