@@ -75,6 +75,10 @@ function command.GETCHATLIST()
 	return chatList
 end
 
+function command.CLEARALL()
+	local chatList = mysqlDb:query("delete from chatlist")
+end
+
 skynet.start(function()
 	local function on_connect(mysqlDb)
 		mysqlDb:query("set charset utf8");

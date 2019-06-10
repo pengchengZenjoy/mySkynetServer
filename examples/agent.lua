@@ -47,8 +47,13 @@ local function request(msg, sz)
     skynet.error("agent 数据编码：chatContent="..data.chatInfo.chatContent)
     local msgId = data.msgId
     if msgId == "CHAT" then
-    	local r = skynet.call("SIMPLEDB", "lua", "insertChat", data.chatInfo.chatContent)
-    	skynet.call(WATCHDOG, "lua", "BROADCAST", data)
+    	local chatContent = data.chatInfo.chatContent
+    	if chatContent == "clear all" then
+    		local r = skynet.call("SIMPLEDB", "lua", "clearAll")
+    	else
+    		local r = skynet.call("SIMPLEDB", "lua", "insertChat", chatContent)
+    		skynet.call(WATCHDOG, "lua", "BROADCAST", data)
+    	end
     elseif msgId == "GETCHATLIST" then
     	local chatList = skynet.call("SIMPLEDB", "lua", "GETCHATLIST", nil)
 		local newChatObj = {}
