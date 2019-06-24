@@ -76,7 +76,17 @@ end
 -- call by self (when recv a request from client)
 function server.request_handler(username, msg)
 	local u = username_map[username]
-	return skynet.tostring(skynet.rawcall(u.agent, "client", msg))
+	--return skynet.tostring(skynet.rawcall(u.agent, "client", msg))
+	return skynet.tostring(skynet.rawcall(u.agent, "client", skynet.pack(msg)))
+end
+
+function server.broadcast_handler(msg)
+	for fd,userInfo in pairs(users) do
+		print("BROADCAST msg.msgId="..msg.msgId)
+		print("BROADCAST userInfo.username="..userInfo.username)
+		local fd = msgserver.getFd(userInfo.username)
+		skynet.send(userInfo.agent, "lua", "broadCastMsg", fd, msg)
+	end
 end
 
 -- call by self (when gate open)

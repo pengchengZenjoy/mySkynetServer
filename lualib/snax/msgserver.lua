@@ -6,6 +6,7 @@ local socketdriver = require "skynet.socketdriver"
 local assert = assert
 local b64encode = crypt.base64encode
 local b64decode = crypt.base64decode
+local protobuf = require "protobuf"
 
 --[[
 
@@ -116,6 +117,13 @@ function server.login(username, secret)
 	}
 end
 
+function server.getFd(username)
+	local u = user_online[username]
+	if u and u.fd then
+		return u.fd
+	end
+end
+
 function server.ip(username)
 	local u = user_online[username]
 	if u and u.fd then
@@ -124,6 +132,9 @@ function server.ip(username)
 end
 
 function server.start(conf)
+	protobuf.register_file "./protos/C2SMsg.pb"
+	protobuf.register_file "./protos/S2CMsg.pb"
+
 	local expired_number = conf.expired_number or 128
 
 	local handler = {}
@@ -132,6 +143,13 @@ function server.start(conf)
 		login = assert(conf.login_handler),
 		logout = assert(conf.logout_handler),
 		kick = assert(conf.kick_handler),
+		broadcast = assert(conf.broadcast_handler),
+		sendMsg = function(fd, result)
+			skynet.error("sendMsg result.msgId="..tostring(result.msgId))
+			local sendMsg = protobuf.encode("s2c.S2CMsg",result)
+			sendMsg = string.pack(">s2",sendMsg)
+			socketdriver.send(fd, netpack.pack(sendMsg))
+		end
 	}
 
 	function handler.command(cmd, source, ...)
@@ -203,7 +221,12 @@ function server.start(conf)
 			result = "200 OK"
 		end
 
-		socketdriver.send(fd, netpack.pack(result))
+		local sendMsg = protobuf.encode("s2c.S2CMsg",
+	    {
+	        msgId = "CONNECTINFO",
+	        connectContent = result
+	    })
+		socketdriver.send(fd, netpack.pack(sendMsg))
 
 		if close then
 			gateserver.closeclient(fd)
@@ -236,9 +259,9 @@ function server.start(conf)
 
 	local function do_request(fd, message)
 		local u = assert(connection[fd], "invalid fd")
-		local session = string.unpack(">I4", message, -4)
-		message = message:sub(1,-5)
-		local p = u.response[session]
+		--local session = string.unpack(">I4", message, -4)
+		--message = message:sub(1,-5)
+		local p = nil --u.response[session]
 		if p then
 			-- session can be reuse in the same connection
 			if p[3] == u.version then
@@ -253,20 +276,29 @@ function server.start(conf)
 			end
 		end
 
+		local cancelResult = false
 		if p == nil then
 			p = { fd }
-			u.response[session] = p
-			local ok, result = pcall(conf.request_handler, u.username, message)
+			--u.response[session] = p
+			--skynet.error("do_request message="..tostring(message))
+			local messageTb = protobuf.decode("c2s.C2SMsg",message)
+			local ok, result = pcall(conf.request_handler, u.username, messageTb)
 			-- NOTICE: YIELD here, socket may close.
-			result = result or ""
+			--result = result or ""
+			result = skynet.unpack(result)
+			if result.cancelResult then
+				cancelResult = true
+			end
 			if not ok then
 				skynet.error(result)
-				result = string.pack(">BI4", 0, session)
+				--result = string.pack(">BI4", 0, session)
 			else
-				result = result .. string.pack(">BI4", 1, session)
+				--result = result .. string.pack(">BI4", 1, session)
 			end
-
-			p[2] = string.pack(">s2",result)
+			if not cancelResult then
+				local sendMsg = protobuf.encode("s2c.S2CMsg",result)
+				p[2] = string.pack(">s2",sendMsg)
+			end
 			p[3] = u.version
 			p[4] = u.index
 		else
@@ -283,11 +315,11 @@ function server.start(conf)
 		u.index = u.index + 1
 		-- the return fd is p[1] (fd may change by multi request) check connect
 		fd = p[1]
-		if connection[fd] then
+		if connection[fd] and not cancelResult then
 			socketdriver.send(fd, p[2])
 		end
 		p[1] = nil
-		retire_response(u)
+		--retire_response(u)
 	end
 
 	local function request(fd, msg, sz)

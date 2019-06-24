@@ -9,6 +9,10 @@ skynet.register_protocol {
 local gate
 local userid, subid
 
+local function send_package(msgTb)
+	skynet.ret(skynet.pack(msgTb))
+end
+
 local CMD = {}
 
 function CMD.login(source, uid, sid, secret)
@@ -38,16 +42,67 @@ function CMD.afk(source)
 	skynet.error(string.format("AFK"))
 end
 
+function CMD.broadCastMsg(source, fd, data)
+	skynet.error("broadCastMsg 数据编码：msgid="..data.msgId)
+    skynet.error("broadCastMsg 数据编码：chatContent="..data.chatInfo.chatContent)
+	-- todo: do something before exit
+	local pb_body = {
+        msgId = "CHAT",
+        chatList = {
+	        {
+	        	chatContent = data.chatInfo.chatContent
+	    	}
+    	}
+    }
+	--local sendMsg = protobuf.encode("s2c.S2CMsg",pb_body)
+	--socketdriver.send(fd, netpack.pack(sendMsg))
+	skynet.send(gate, "lua", "sendMsg", fd, pb_body)
+end
+
+local function request(messageTb)
+	messageTb = skynet.unpack(messageTb)
+	msgId = messageTb.msgId
+	skynet.error("msgagent messageTb.msgId="..tostring(messageTb.msgId))
+    if msgId == "CHAT" then
+    	local chatContent = messageTb.chatInfo.chatContent
+    	if chatContent == "clear all" then
+    		local r = skynet.call("SIMPLEDB", "lua", "clearAll")
+    	else
+	    	local r = skynet.send("SIMPLEDB", "lua", "insertChat", messageTb.chatInfo.chatContent)
+	    	skynet.send(gate, "lua", "broadcast", messageTb)
+	    end
+	    local info = {}
+	    info.cancelResult = true
+	    skynet.ret(skynet.pack(info))
+    elseif msgId == "GETCHATLIST" then
+    	local chatList = skynet.call("SIMPLEDB", "lua", "GETCHATLIST", nil)
+		local newChatObj = {}
+	    for i=1, #chatList do
+	    	local chatInfo = chatList[i]
+	    	skynet.error("GETCHATLIST chatInfo.chat_id="..chatInfo.chat_id)
+	    	skynet.error("GETCHATLIST chatInfo.chat_content="..chatInfo.chat_content)
+	    	local info = {}
+			info.chatContent = chatInfo.chat_content
+	    	table.insert(newChatObj, info)
+	    end
+	    local msgTb = {
+	        msgId = "CHATLIST",
+	        chatList = newChatObj
+	    }
+		send_package(msgTb)
+    end
+end
+
 skynet.start(function()
+
 	-- If you want to fork a work thread , you MUST do it in CMD.login
 	skynet.dispatch("lua", function(session, source, command, ...)
 		local f = assert(CMD[command])
 		skynet.ret(skynet.pack(f(source, ...)))
 	end)
 
-	skynet.dispatch("client", function(_,_, msg)
+	skynet.dispatch("client", function(_,_, messageTb)
 		-- the simple echo service
-		skynet.sleep(10)	-- sleep a while
-		skynet.ret(msg)
+		request(messageTb)
 	end)
 end)
