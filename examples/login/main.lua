@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 
 skynet.start(function()
+	local FIRRoomList = skynet.newservice("FIRRoomList")
 	local loginserver = skynet.newservice("logind")
 	local gate = skynet.newservice("gated", loginserver)
 

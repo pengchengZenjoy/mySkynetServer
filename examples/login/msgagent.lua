@@ -62,7 +62,9 @@ end
 local function request(messageTb)
 	messageTb = skynet.unpack(messageTb)
 	msgId = messageTb.msgId
+	skynet.error("msgagent userid="..tostring(userid))
 	skynet.error("msgagent messageTb.msgId="..tostring(messageTb.msgId))
+	
     if msgId == "CHAT" then
     	local chatContent = messageTb.chatInfo.chatContent
     	if chatContent == "clear all" then
@@ -88,6 +90,28 @@ local function request(messageTb)
 	    local msgTb = {
 	        msgId = "CHATLIST",
 	        chatList = newChatObj
+	    }
+		send_package(msgTb)
+	elseif msgId == "GETROOMLIST" then
+		local curRoomList = skynet.call("FIRRoomList", "lua", "getRoomList")
+		local myRootList = {}
+		for k,v in ipairs(curRoomList) do
+			skynet.error("roomList type(v)="..type(v))
+			skynet.error("roomList v="..tostring(v))
+			table.insert(myRootList, v)
+		end
+		local msgTb = {
+	        msgId = "ROOMLIST",
+	        roomList = myRootList
+	    }
+		send_package(msgTb)
+	elseif msgId == "ENTERROOM" then
+		local curRoomId = messageTb.roomId
+		skynet.error("ENTERROOM roomId="..curRoomId)
+		--local curRoomList = skynet.call(curRoomId, "lua", "enterRoom", )
+		local msgTb = {
+	        msgId = "ENTERROOMSUCCESS",
+	        roomId = curRoomId
 	    }
 		send_package(msgTb)
     end
