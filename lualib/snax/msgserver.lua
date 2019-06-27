@@ -144,11 +144,26 @@ function server.start(conf)
 		logout = assert(conf.logout_handler),
 		kick = assert(conf.kick_handler),
 		broadcast = assert(conf.broadcast_handler),
+		enter_Room = assert(conf.enter_Room),
+		exit_Room = assert(conf.exit_Room),
 		sendMsg = function(fd, result)
 			skynet.error("sendMsg result.msgId="..tostring(result.msgId))
 			local sendMsg = protobuf.encode("s2c.S2CMsg",result)
 			sendMsg = string.pack(">s2",sendMsg)
 			socketdriver.send(fd, netpack.pack(sendMsg))
+		end,
+		roomSendMsg = function(nameList, result)
+			skynet.error("roomSendMsg result.msgId="..tostring(result.msgId))
+			local sendMsg = protobuf.encode("s2c.S2CMsg",result)
+			sendMsg = string.pack(">s2",sendMsg)
+			--local packMsg = netpack.pack(sendMsg)
+			for i,name in ipairs(nameList) do
+				local u = user_online[name]
+				if u and u.fd then
+					skynet.error("roomSendMsg u.fd="..tostring(u.fd))
+					socketdriver.send(u.fd, netpack.pack(sendMsg))
+				end
+			end
 		end
 	}
 

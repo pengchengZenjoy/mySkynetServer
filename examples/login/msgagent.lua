@@ -7,7 +7,7 @@ skynet.register_protocol {
 }
 
 local gate
-local userid, subid
+local userid, subid, username
 
 local function send_package(msgTb)
 	skynet.ret(skynet.pack(msgTb))
@@ -15,12 +15,13 @@ end
 
 local CMD = {}
 
-function CMD.login(source, uid, sid, secret)
+function CMD.login(source, uid, sid, secret, name)
 	-- you may use secret to make a encrypted data stream
 	skynet.error(string.format("%s is login", uid))
 	gate = source
 	userid = uid
 	subid = sid
+	username = name
 	-- you may load user data from database
 end
 
@@ -107,13 +108,25 @@ local function request(messageTb)
 		send_package(msgTb)
 	elseif msgId == "ENTERROOM" then
 		local curRoomId = messageTb.roomId
+		skynet.error("ENTERROOM userid="..userid)
+		skynet.error("ENTERROOM username="..username)
 		skynet.error("ENTERROOM roomId="..curRoomId)
-		--local curRoomList = skynet.call(curRoomId, "lua", "enterRoom", )
-		local msgTb = {
-	        msgId = "ENTERROOMSUCCESS",
-	        roomId = curRoomId
-	    }
-		send_package(msgTb)
+		skynet.error("ENTERROOM gate="..gate)
+		local result = skynet.call(curRoomId, "lua", "enterRoom", gate, username, userid)
+		skynet.error("ENTERROOM result="..tostring(result))
+		if result then
+			skynet.send(gate, "lua", "enter_Room", userid, curRoomId)
+			local msgTb = {
+		        msgId = "ENTERROOMSUCCESS",
+		        roomId = curRoomId
+		    }
+			send_package(msgTb)
+		else
+			local msgTb = {
+		        msgId = "ENTERROOMFAIL",
+		    }
+			send_package(msgTb)
+		end
     end
 end
 

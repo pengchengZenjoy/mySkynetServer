@@ -30,7 +30,7 @@ function server.login_handler(uid, secret)
 	}
 
 	-- trash subid (no used)
-	skynet.call(agent, "lua", "login", uid, id, secret)
+	skynet.call(agent, "lua", "login", uid, id, secret, username)
 
 	users[uid] = u
 	username_map[username] = u
@@ -39,6 +39,23 @@ function server.login_handler(uid, secret)
 
 	-- you should return unique subid
 	return id
+end
+
+function server.enter_Room(uid, roomId)
+	skynet.error("enter_Room gated uid="..tostring(uid))
+	skynet.error("enter_Room gated roomId="..tostring(roomId))
+	u = users[uid]
+	if u then
+		u.roomId = roomId
+	end
+end
+
+function server.exit_Room(uid)
+	skynet.error("exit_Room gated uid="..tostring(uid))
+	u = users[uid]
+	if u then
+		u.roomId = nil
+	end
 end
 
 -- call by agent
@@ -69,6 +86,10 @@ end
 function server.disconnect_handler(username)
 	local u = username_map[username]
 	if u then
+		if u.roomId then
+			pcall(skynet.call, u.roomId, "lua", "afk", u.uid)
+			u.roomId = nil
+		end
 		skynet.call(u.agent, "lua", "afk")
 	end
 end
@@ -77,7 +98,15 @@ end
 function server.request_handler(username, msg)
 	local u = username_map[username]
 	--return skynet.tostring(skynet.rawcall(u.agent, "client", msg))
-	return skynet.tostring(skynet.rawcall(u.agent, "client", skynet.pack(msg)))
+	if u.roomId then
+		local curRoomId = u.roomId
+		if msg.msgId == "EXITROOM" then
+			u.roomId = nil
+		end
+		return skynet.tostring(skynet.rawcall(curRoomId, "client", skynet.pack(u.uid, msg)))
+	else
+		return skynet.tostring(skynet.rawcall(u.agent, "client", skynet.pack(msg)))
+	end
 end
 
 function server.broadcast_handler(msg)
