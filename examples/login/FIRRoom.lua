@@ -61,7 +61,7 @@ function CMD.afk(source, userid)
 end
 
 local function checkIsEnd(curIndexX, curIndexY, curMoveIndex)
-	local dirList = {{1,0}, {1,1}, {1,-1}}
+	local dirList = {{1,0}, {1,1}, {1,-1}, {0,1}}
 	for i,dir in ipairs(dirList) do
 		local num = 0
 		local dirX = dir[1]
@@ -157,7 +157,7 @@ local function request(userId, messageTb)
 			end
 		end
 	elseif msgId == "EXITROOM" then
-		exitRoom(userid)
+		exitRoom(userId)
 		local msgTb = {
 	        msgId = "S_EXITROOM",
 	        userId = userId,
