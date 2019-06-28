@@ -11,4 +11,5 @@ skynet.start(function()
 		servername = "sample",
 	})
 	skynet.newservice("simpledb")
+	--skynet.newservice("testhttpd")
 end)
