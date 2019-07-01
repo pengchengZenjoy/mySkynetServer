@@ -10,6 +10,6 @@ skynet.start(function()
 		maxclient = 64,
 		servername = "sample",
 	})
-	skynet.newservice("simpledb")
+	--skynet.newservice("simpledb")
 	--skynet.newservice("testhttpd")
 end)
