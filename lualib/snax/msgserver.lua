@@ -174,10 +174,12 @@ function server.start(conf)
 
 	function handler.open(source, gateconf)
 		local servername = assert(gateconf.servername)
+		skynet.error("msgserver open servername"..tostring(servername))
 		return conf.register_handler(servername)
 	end
 
 	function handler.connect(fd, addr)
+		skynet.error("msgserver connect addr"..tostring(addr))
 		handshake[fd] = addr
 		gateserver.openclient(fd)
 	end
