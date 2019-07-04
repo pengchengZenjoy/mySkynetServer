@@ -4,10 +4,10 @@ local skynet = require "skynet"
 
 local server = {
 	--host = "127.0.0.1",
-	host = "10.7.2.180",
+	--host = "10.7.2.180",
 	--host = "149.28.65.61",
 	--host = "39.105.69.135",
-	--host = "172.17.56.192",
+	host = "172.17.56.192",
 	port = 8001,
 	multilogin = false,	-- disallow multilogin
 	name = "login_master",
