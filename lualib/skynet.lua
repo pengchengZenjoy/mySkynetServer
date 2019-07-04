@@ -208,6 +208,24 @@ function skynet.timeout(ti, func)
 	return co	-- for debug
 end
 
+function skynet.timeoutMy(ti, func)
+	local session = c.intcommand("TIMEOUT",ti)
+	assert(session)
+	local co = co_create(func)
+	assert(session_id_coroutine[session] == nil)
+	session_id_coroutine[session] = co
+	return session
+end
+
+local function remove_timeout_cb(...)
+end
+
+function skynet.remove_timeout(session)
+    local co = co_create(remove_timeout_cb)
+    assert(session_id_coroutine[session] ~= nil)
+    session_id_coroutine[session] = co
+end
+
 local function suspend_sleep(session, token)
 	local tag = session_coroutine_tracetag[running_thread]
 	if tag then c.trace(tag, "sleep", 2) end

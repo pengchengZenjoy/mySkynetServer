@@ -94,7 +94,7 @@ local function request(messageTb)
 	    }
 		send_package(msgTb)
 	elseif msgId == "GETROOMLIST" then
-		local curRoomList = skynet.call("FIRRoomList", "lua", "getRoomList")
+		local curRoomList = skynet.call("GameRoomList", "lua", "getRoomList")
 		local myRootList = {}
 		for k,v in ipairs(curRoomList) do
 			skynet.error("roomList type(v)="..type(v))

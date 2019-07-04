@@ -11,9 +11,9 @@ function CMD.getRoomList()
 end
 
 skynet.start(function()
-	local FIRRoom = skynet.newservice("FIRRoom")
-	skynet.error("start FIRRoom="..tostring(FIRRoom))
-	table.insert(roomList, FIRRoom)
+	local LandlordRoom = skynet.newservice("LandlordRoom")
+	skynet.error("start LandlordRoom="..tostring(LandlordRoom))
+	table.insert(roomList, LandlordRoom)
 	-- If you want to fork a work thread , you MUST do it in CMD.login
 	skynet.dispatch("lua", function(session, source, command, ...)
 		skynet.error("roomList command="..tostring(command))
@@ -21,5 +21,5 @@ skynet.start(function()
 		f()
 		--skynet.ret(skynet.pack(f(source, ...)))
 	end)
-	skynet.register "FIRRoomList"
+	skynet.register "GameRoomList"
 end)

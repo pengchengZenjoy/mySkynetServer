@@ -149,14 +149,13 @@ function server.start(conf)
 		sendMsg = function(fd, result)
 			skynet.error("sendMsg result.msgId="..tostring(result.msgId))
 			local sendMsg = protobuf.encode("s2c.S2CMsg",result)
-			sendMsg = string.pack(">s2",sendMsg)
+			--sendMsg = string.pack(">s2",sendMsg)
 			socketdriver.send(fd, netpack.pack(sendMsg))
 		end,
 		roomSendMsg = function(nameList, result)
 			skynet.error("roomSendMsg result.msgId="..tostring(result.msgId))
 			local sendMsg = protobuf.encode("s2c.S2CMsg",result)
-			sendMsg = string.pack(">s2",sendMsg)
-			--local packMsg = netpack.pack(sendMsg)
+			--sendMsg = string.pack(">s2",sendMsg)
 			for i,name in ipairs(nameList) do
 				local u = user_online[name]
 				if u and u.fd then
@@ -314,7 +313,7 @@ function server.start(conf)
 			end
 			if not cancelResult then
 				local sendMsg = protobuf.encode("s2c.S2CMsg",result)
-				p[2] = string.pack(">s2",sendMsg)
+				p[2] = sendMsg --string.pack(">s2",sendMsg)
 			end
 			p[3] = u.version
 			p[4] = u.index
@@ -333,7 +332,7 @@ function server.start(conf)
 		-- the return fd is p[1] (fd may change by multi request) check connect
 		fd = p[1]
 		if connection[fd] and not cancelResult then
-			socketdriver.send(fd, p[2])
+			socketdriver.send(fd, netpack.pack(p[2]))
 		end
 		p[1] = nil
 		--retire_response(u)

@@ -5,4 +5,5 @@ start = "main"
 bootstrap = "snlua bootstrap"	-- The service for bootstrap
 luaservice = "./service/?.lua;./examples/login/?.lua"
 lualoader = "lualib/loader.lua"
+lua_path = "./lualib/?.lua;".."./lualib/?/init.lua;".."./examples/?.lua"
 cpath = "./cservice/?.so"
